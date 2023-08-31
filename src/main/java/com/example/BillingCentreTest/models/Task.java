@@ -17,7 +17,7 @@ public class Task {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private UUID id;
+    private long id;
     @Column(name = "type")
     private String type;
     @Column(name = "title")
@@ -26,14 +26,9 @@ public class Task {
     private String description;
     @Column(name = "date")
     private Date date;
-    @Column(name = "tags")
-    @ManyToMany
-    @JoinTable(
-            name = "task_tag",
-            joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    private List<Tag> tags;
+    @ManyToOne
+    @JoinColumn(name = "tag_id", referencedColumnName = "id")
+    private Tag owner;
 
 
 }
