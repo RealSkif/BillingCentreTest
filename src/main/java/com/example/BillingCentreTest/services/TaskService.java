@@ -22,9 +22,12 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
-    public List<Task> findbyDate(Date date) {
+    /*
+     * Возвращает список задач на переданную дату с отсортированными типами приоритетов
+     * */
+    public List<Task> findByDate(Date date) {
         return taskRepository.findByDate(date).stream()
-                .sorted(Comparator.comparing(Task::getType))
+                .sorted(Comparator.comparingInt(task -> task.getType().getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -33,20 +36,19 @@ public class TaskService {
         return foundTask.orElse(null);
     }
 
-//    public List<String> findType() {
-//        return taskRepository.findType();
-//    }
+    /*
+     * Возвращает список приоритетов заголовков. Т.к. возвращается список строк, а не объекты Task,
+     * то в названии метода не использовал слово find.
+     * */
+    public List<String> getTypes() {
+        return taskRepository.getTypes();
+    }
 
     @Transactional
     public void save(Task task) {
         taskRepository.save(task);
     }
 
-//    @Transactional
-//    public void update(long id, Task updatedTask) {
-//        updatedTask.setId(id);
-//        taskRepository.save(updatedTask);
-//    }
 
     @Transactional
     public void delete(long id) {

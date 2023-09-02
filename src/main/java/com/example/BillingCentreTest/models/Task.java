@@ -1,16 +1,16 @@
 package com.example.BillingCentreTest.models;
 
+import com.example.BillingCentreTest.utills.TaskTypes;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "task")
 public class Task {
@@ -18,8 +18,12 @@ public class Task {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    /*
+     * Тип задачи, показывающий приоритет задачи вынес в Enum пакете utills
+     * */
+    @Enumerated(EnumType.STRING)
     @Column(name = "type")
-    private String type;
+    private TaskTypes type;
     @Column(name = "title")
     private String title;
     @Column(name = "description")
@@ -28,7 +32,5 @@ public class Task {
     private Date date;
     @ManyToOne
     @JoinColumn(name = "tag_id", referencedColumnName = "id")
-    private Tag owner;
-
-
+    private Tag tag;
 }

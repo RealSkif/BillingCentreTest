@@ -6,7 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TagService {
@@ -17,12 +20,20 @@ public class TagService {
         this.tagRepository = tagRepository;
     }
 
-//    public List<Tag> findAllTagsWithTasks() {
-//        return tagRepository.findAllTagsWithTasks();
-//    }
+    public List<Tag> findAllTagsWithTasks() {
+        return tagRepository.findAllTagsWithTasks();
+    }
 
+    /*
+     * Возвращает тег, найденный по уникальному заголовку, если в нем присутствуют задачи,
+     * то сортирует по приоритету
+     * */
     public Tag findByHeader(String header) {
-        return tagRepository.findByHeader(header);
+        Tag tag = tagRepository.findByHeader(header);
+        if (tag != null && tag.getTasks() != null) {
+            tag.getTasks().sort(Comparator.comparingInt(task -> task.getType().getValue()));
+        }
+        return tag;
     }
 
     @Transactional
@@ -30,10 +41,8 @@ public class TagService {
         tagRepository.save(tag);
     }
 
-
-//    @Transactional
-
-//    public void delete(String header) {
-//        tagRepository.delete(header);
-//    }
+    @Transactional
+    public void delete(String header) {
+        tagRepository.deleteById(findByHeader(header).getId());
+    }
 }

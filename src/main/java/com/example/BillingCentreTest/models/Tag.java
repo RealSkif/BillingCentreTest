@@ -1,12 +1,14 @@
 package com.example.BillingCentreTest.models;
-
+/*
+*
+* */
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,9 +20,10 @@ public class Tag {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
     @Column(name = "header")
     private String header;
-    @Column(name = "tasks")
-    @OneToMany(mappedBy = "owner")
+    @JsonIgnore
+    @OneToMany(mappedBy = "tag", cascade = CascadeType.REMOVE)
     private List<Task> tasks;
 }

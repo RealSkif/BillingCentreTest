@@ -11,12 +11,11 @@ import java.util.UUID;
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Long> {
 
-//    @Query("SELECT f FROM Tag f JOIN FETCH f.task s WHERE SIZE(s) > 0")
-//    List<Tag> findAllTagsWithTasks();
+    @Query("SELECT DISTINCT t FROM Tag t JOIN FETCH t.tasks")
+    List<Tag> findAllTagsWithTasks();
 
     Tag findByHeader(String header);
 
-//    void delete(String header);
 
 }
 
