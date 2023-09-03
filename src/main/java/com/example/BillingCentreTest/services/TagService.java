@@ -45,4 +45,8 @@ public class TagService {
     public void delete(String header) {
         tagRepository.deleteById(findByHeader(header).getId());
     }
+
+    public boolean findById(long id) {
+        return tagRepository.findById(id).isPresent();
+    }
 }

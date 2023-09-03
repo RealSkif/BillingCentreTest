@@ -18,9 +18,6 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public List<Task> findAll() {
-        return taskRepository.findAll();
-    }
 
     /*
      * Возвращает список задач на переданную дату с отсортированными типами приоритетов
@@ -30,6 +27,23 @@ public class TaskService {
                 .sorted(Comparator.comparingInt(task -> task.getType().getValue()))
                 .collect(Collectors.toList());
     }
+    /*
+     * При добавлении пагинации столкнулся со следующей проблемой:
+     * В качестве типа используется Enum, с этим проблемы нет. Но сортировка проводится по
+     * целочисленному значению енама, в виде как в закомментированном методе ниже выпадает ошибка
+     * attribute is not joinable. А если вместо type.value писать просто type, то сортировка
+     * соответственно проводится на элементах енама в алфавитном порядке
+     * */
+//    public Page<Task> findByDate(Date date, Pageable pageable) {
+//        Sort sort = Sort.by(Sort.Direction.ASC, "type.value");
+//
+//        Pageable pageableWithSort = PageRequest.of(
+//                pageable.getPageNumber(),
+//                pageable.getPageSize(),
+//                sort
+//        );
+//        return taskRepository.findByDate(date, pageableWithSort);
+//    }
 
     public Task findOne(long id) {
         Optional<Task> foundTask = taskRepository.findById(id);

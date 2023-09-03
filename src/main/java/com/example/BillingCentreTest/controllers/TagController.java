@@ -1,15 +1,20 @@
 package com.example.BillingCentreTest.controllers;
 
+import com.example.BillingCentreTest.dto.TagDTO;
 import com.example.BillingCentreTest.models.Tag;
 import com.example.BillingCentreTest.models.Task;
 import com.example.BillingCentreTest.services.TagService;
 import com.example.BillingCentreTest.services.TaskService;
+import com.example.BillingCentreTest.utills.TagException;
+import jakarta.validation.Valid;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -18,16 +23,16 @@ public class TagController {
     private final TagService tagService;
 
     private final TaskService taskService;
+    private final ModelMapper modelMapper;
 
 
     @Autowired
-    public TagController(TagService tagService, TaskService taskService) {
+    public TagController(TagService tagService, TaskService taskService, ModelMapper modelMapper) {
         this.tagService = tagService;
         this.taskService = taskService;
+        this.modelMapper = modelMapper;
     }
-/*
-*
-* */
+
     @GetMapping()
     public List<Tag> findAllTagsWithTasks() {
         return tagService.findAllTagsWithTasks();
@@ -40,6 +45,8 @@ public class TagController {
      * */
     @GetMapping("/one")
     public Tag findOne(@RequestParam("header") String header) {
+        if (tagService.findByHeader(header) == null)
+            throw new TagException("Тег с заголовком " + header + " не найден");
         return tagService.findByHeader(header);
     }
 
@@ -47,37 +54,50 @@ public class TagController {
      * Я решил, что тег может сразу прийти со списком его задач, поэтому сначала проверяю его заголовок на уникальность,
      * а потом отдельно перезаписываю его задачи. Таким образом задачи заносятся в бд уже со ссылкой на этот тег
      * */
+//    @Secured("USER")
     @PostMapping()
-    public ResponseEntity<String> create(@RequestBody Tag tag) {
-        if (tagService.findByHeader(tag.getHeader()) == null) {
-            tagService.save(tag);
-            checkAndSaveTask(tag);
-            return ResponseEntity.ok().build();
-        } else return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body("Тег с заголовком " + tag.getHeader() + " уже существует");
+    public ResponseEntity<String> create(@RequestBody @Valid TagDTO tagDTO,
+                                         BindingResult bindingResult) {
+        if (!createErrorMessage(bindingResult).isEmpty())
+            throw new TagException(createErrorMessage(bindingResult).toString());
+        Tag tag = convertToTag(tagDTO);
+        if (tagService.findByHeader(tag.getHeader()) != null)
+            throw new TagException("Тег с заголовком " + tag.getHeader() + " уже существует");
+        tagService.save(tag);
+        checkAndSaveTask(tag);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body("Тег успешно сохранен");
     }
 
     @PatchMapping()
-    public ResponseEntity<String> update(@RequestBody Tag tag) {
-        if (tagService.findByHeader(tag.getHeader()) == null) {
+    public ResponseEntity<String> update(@RequestBody @Valid TagDTO tagDTO,
+                                         BindingResult bindingResult) {
+        if (!createErrorMessage(bindingResult).isEmpty())
+            throw new TagException(createErrorMessage(bindingResult).toString());
+        Tag tag = convertToTag(tagDTO);
+        if (!tagService.findById(tag.getId()))
+            throw new TagException("Тег с ID " + tag.getId() + "  не существует");
+        if (tagService.findByHeader(tag.getHeader()) != null)
+            throw new TagException("Тег с заголовком " + tag.getHeader() + " уже существует");
+        else {
             tagService.save(tag);
             checkAndSaveTask(tag);
-            return ResponseEntity.ok().build();
-        } else return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body("Заголовок " + tag.getHeader() + " уже используется другим тегом");
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body("Тег успешно изменен");
+        }
     }
 
     @DeleteMapping()
     public ResponseEntity<String> delete(@RequestParam("header") String header) {
-        if (tagService.findByHeader(header) == null) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body("Тег с заголовком " + header + " для изменения не найден");
-        }
+        if (tagService.findByHeader(header) == null)
+            throw new TagException("Тег с заголовком " + header + " не найден");
         tagService.delete(header);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body("Тег успешно удален");
+    }
+
+    private Tag convertToTag(TagDTO tag) {
+        return modelMapper.map(tag, Tag.class);
     }
 
     /*
@@ -90,5 +110,23 @@ public class TagController {
                 taskService.save(task);
             }
         }
+    }
+
+    private StringBuilder createErrorMessage(BindingResult bindingResult) {
+        StringBuilder errorsMessages = new StringBuilder();
+        if (bindingResult.hasErrors()) {
+            List<FieldError> errors = bindingResult.getFieldErrors();
+            for (FieldError error : errors) {
+                errorsMessages.append(error.getField())
+                        .append(" - ").append(error.getDefaultMessage()).append(";\n");
+            }
+        }
+        return errorsMessages;
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handleValidationExceptions(TagException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
     }
 }
