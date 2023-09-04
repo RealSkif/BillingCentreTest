@@ -5,7 +5,6 @@ import com.example.BillingCentreTest.models.Tag;
 import com.example.BillingCentreTest.models.Task;
 import com.example.BillingCentreTest.services.TagService;
 import com.example.BillingCentreTest.services.TaskService;
-import com.example.BillingCentreTest.utills.TagException;
 import com.example.BillingCentreTest.utills.TaskException;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
@@ -36,11 +35,19 @@ public class TaskController {
         this.modelMapper = modelMapper;
     }
 
+    /**
+     * @param date - дата, для которой производится поиск задач
+     * @return возвращает список объектов класса Task
+     */
     @GetMapping("/date")
     public List<Task> findByDate(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
         return taskService.findByDate(date);
     }
 
+    /**
+     * @param id - ID, по которому производится поиск задачи
+     * @return возвращает объект класса Task
+     */
     @GetMapping("/one")
     public Task findOne(@RequestParam("id") long id) {
         if (taskService.findOne(id) == null)
@@ -48,9 +55,11 @@ public class TaskController {
         return taskService.findOne(id);
     }
 
-    /*
-     * Возвращает несортированный список типов задач, использует кэширование
-     * */
+    /**
+     * Метод использует кэширование
+     *
+     * @return возвращает список типов задач
+     */
     @Cacheable("priorityTypesCache")
     @GetMapping("/type")
     public List<String> getTypes() {
@@ -62,6 +71,11 @@ public class TaskController {
      * в конструктор или сеттер я посчитал ненужным. Эта проверка происходит в методах Create и Update этого контроллера
      * Так же если задача подается с тегом, то он обрабатывается и заносится в бд
      * */
+    /**
+     * @param taskDTO       - объект класса taskDTO
+     * @param bindingResult - объект класса bindingResult для хранения ошибок валидации
+     * @return возвращает сообщение и код о результате сохранения
+     */
     @PostMapping()
     public ResponseEntity<String> create(@RequestBody @Valid TaskDTO taskDTO,
                                          BindingResult bindingResult) {
@@ -74,7 +88,11 @@ public class TaskController {
                 .body("Задача успешно сохранена");
     }
 
-
+    /**
+     * @param taskDTO       - объект класса taskDTO
+     * @param bindingResult - объект класса bindingResult для хранения ошибок валидации
+     * @return возвращает сообщение и код о результате изменения
+     */
     @PatchMapping()
     public ResponseEntity<String> update(@RequestBody @Valid TaskDTO taskDTO,
                                          BindingResult bindingResult) {
@@ -91,6 +109,10 @@ public class TaskController {
         }
     }
 
+    /**
+     * @param id - ID удаляемой задачи
+     * @return возвращает сообщение и код о результате сохранения
+     */
     @DeleteMapping()
     public ResponseEntity<String> delete(@RequestParam("id") long id) {
         if (taskService.findOne(id) == null)
@@ -105,9 +127,10 @@ public class TaskController {
     }
 
 
-    /*
+    /**
      * Проверка наличия тега в задаче и сохранение его в бд, если такой не существовал
-     * */
+     * @param task - объект класса Task
+     */
     private void checkAndSaveTag(Task task) {
         if (task.getTag() == null)
             return;
@@ -118,7 +141,12 @@ public class TaskController {
         }
         task.setTag(tag);
     }
-
+    /**
+     * Обработка ошибок валидации и составление сообщения с ошибками
+     *
+     * @param bindingResult - объект класса bindingResult
+     * @return StringBuilder c сообщением об ошибке
+     */
     private StringBuilder createErrorMessage(BindingResult bindingResult) {
         StringBuilder errorsMessages = new StringBuilder();
         if (bindingResult.hasErrors()) {

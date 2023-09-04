@@ -17,8 +17,8 @@ import java.util.Date;
 public class TaskDTO {
     private long id;
     /*
-    * Как прикрутить валидацию к Enum так и не придумал
-    * */
+     * Как прикрутить валидацию к Enum так и не придумал
+     * */
     @Enumerated(EnumType.STRING)
     private TaskTypes type;
     @NotBlank(message = "Наименование не должно быть пустым")
@@ -28,5 +28,4 @@ public class TaskDTO {
     @Future(message = "Дата не должна быть меньше текущей")
     private Date date;
     private Tag tag;
-
 }

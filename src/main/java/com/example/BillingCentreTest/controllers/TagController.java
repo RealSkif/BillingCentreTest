@@ -21,10 +21,8 @@ import java.util.List;
 @RequestMapping("/tag")
 public class TagController {
     private final TagService tagService;
-
     private final TaskService taskService;
     private final ModelMapper modelMapper;
-
 
     @Autowired
     public TagController(TagService tagService, TaskService taskService, ModelMapper modelMapper) {
@@ -33,16 +31,22 @@ public class TagController {
         this.modelMapper = modelMapper;
     }
 
+    /**
+     * @return возвращает список тегов, у которых имеются задачи
+     */
     @GetMapping()
     public List<Tag> findAllTagsWithTasks() {
         return tagService.findAllTagsWithTasks();
     }
 
-    /*
-     * Как и в контроллере для задач не уверен, какой способ лучше:
-     * Вместо @RequestParam и маппинга на постоянный URL можно отправлять
-     * запрос на единый маппинг контроллера tag/{header} и использовать аннотацию @PathVariable
-     * */
+    /* Как и в контроллере для задач не уверен, какой способ лучше:
+     Вместо @RequestParam и маппинга на постоянный URL можно отправлять
+     запрос на единый маппинг контроллера tag/{header} и использовать аннотацию @PathVariable */
+
+    /**
+     * @param header - заголовок искомого тега
+     * @return возвращает найденный по заголовку тег
+     */
     @GetMapping("/one")
     public Tag findOne(@RequestParam("header") String header) {
         if (tagService.findByHeader(header) == null)
@@ -51,10 +55,15 @@ public class TagController {
     }
 
     /*
-     * Я решил, что тег может сразу прийти со списком его задач, поэтому сначала проверяю его заголовок на уникальность,
-     * а потом отдельно перезаписываю его задачи. Таким образом задачи заносятся в бд уже со ссылкой на этот тег
-     * */
-//    @Secured("USER")
+      Я решил, что тег может сразу прийти со списком его задач, поэтому сначала проверяю его заголовок на уникальность,
+      а потом отдельно перезаписываю его задачи. Таким образом задачи заносятся в бд уже со ссылкой на этот тег
+     */
+
+    /**
+     * @param tagDTO        - объект класса TegDTO
+     * @param bindingResult - объект класса bindingResult для хранения ошибок валидации
+     * @return возвращает сообщение и код о результате сохранения
+     */
     @PostMapping()
     public ResponseEntity<String> create(@RequestBody @Valid TagDTO tagDTO,
                                          BindingResult bindingResult) {
@@ -69,6 +78,11 @@ public class TagController {
                 .body("Тег успешно сохранен");
     }
 
+    /**
+     * @param tagDTO        - объект класса TegDTO
+     * @param bindingResult - объект класса bindingResult для хранения ошибок валидации
+     * @return возвращает сообщение и код о результате изменения
+     */
     @PatchMapping()
     public ResponseEntity<String> update(@RequestBody @Valid TagDTO tagDTO,
                                          BindingResult bindingResult) {
@@ -87,6 +101,10 @@ public class TagController {
         }
     }
 
+    /**
+     * @param header - заголок удаляемого тега
+     * @return возвращает сообщение и код о результате удаления
+     */
     @DeleteMapping()
     public ResponseEntity<String> delete(@RequestParam("header") String header) {
         if (tagService.findByHeader(header) == null)
@@ -101,8 +119,12 @@ public class TagController {
     }
 
     /*
-     * Проверку на наличие задач тега и их сохранение вынес в отдельный метод
-     * */
+      Проверку на наличие задач тега и их сохранение вынес в отдельный метод
+    */
+
+    /**
+     * @param tag - объект класса Tag
+     */
     private void checkAndSaveTask(Tag tag) {
         if (tag.getTasks() != null) {
             for (Task task : tag.getTasks()) {
@@ -112,6 +134,12 @@ public class TagController {
         }
     }
 
+    /**
+     * Обработка ошибок валидации и составление сообщения с ошибками
+     *
+     * @param bindingResult - объект класса bindingResult
+     * @return StringBuilder c сообщением об ошибке
+     */
     private StringBuilder createErrorMessage(BindingResult bindingResult) {
         StringBuilder errorsMessages = new StringBuilder();
         if (bindingResult.hasErrors()) {
@@ -124,6 +152,11 @@ public class TagController {
         return errorsMessages;
     }
 
+    /**
+     * Перехват ошибок валидации и отправление сообщения с ними отправителю
+     *
+     * @param ex - объект класса TagException
+     */
     @ExceptionHandler
     public ResponseEntity<String> handleValidationExceptions(TagException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
